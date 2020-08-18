@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NanoLogger.Dummy": {
+      "commandName": "Project",
+      "commandLineArgs": "--withConsoleLog --withFileLog"
+    }
+  }
+}
