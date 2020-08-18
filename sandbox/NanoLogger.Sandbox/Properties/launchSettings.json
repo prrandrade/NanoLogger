@@ -1,8 +1,8 @@
 {
   "profiles": {
-    "NanoLogger.Dummy": {
+    "NanoLogger.Sandbox": {
       "commandName": "Project",
-      "commandLineArgs": "--withConsoleLog --withFileLog --FileRollingInterval Hour"
+      "commandLineArgs": "--withConsoleLog --withFileLog"
     }
   }
 }
