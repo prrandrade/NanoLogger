@@ -1,4 +1,4 @@
-﻿namespace NanoLogger.Dummy
+﻿namespace NanoLogger.Sandbox
 {
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;

@@ -1,6 +1,6 @@
 ﻿namespace NanoLogger
 {
-    using System;
+    using System.Linq;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using PropertyRetriever;
@@ -17,6 +17,14 @@
             bool withSeqLog, withConsoleLog, withFileLog;
             string serviceName, seqAddress, seqApiKey;
 
+
+            #region Options for file log
+
+            RollingInterval fileRollingInterval;
+
+
+            #endregion
+
             using (var scope = @this.BuildServiceProvider().GetService<IServiceScopeFactory>().CreateScope())
             {
                 var propertyRetriever = scope.ServiceProvider.GetService<IPropertyRetriever>();
@@ -29,6 +37,12 @@
                 withSeqLog = propertyRetriever.CheckFromCommandLine("withSeqLog");
                 withConsoleLog = propertyRetriever.CheckFromCommandLine("withConsoleLog");
                 withFileLog = propertyRetriever.CheckFromCommandLine("withFileLog");
+
+                #region Retrieving options for file log
+
+                fileRollingInterval = propertyRetriever.RetrieveFromCommandLine<RollingInterval>("fileRollingInterval").ToList()[0];
+
+                #endregion
             }
 
             var logger = new LoggerConfiguration()
@@ -41,7 +55,7 @@
                 logger = logger.WriteTo.Seq(serverUrl: seqAddress, apiKey: seqApiKey);
 
             if (withFileLog)
-                logger = logger.WriteTo.File(path: $"log\\log_{serviceName}_.txt", rollingInterval: RollingInterval.Hour, shared: true);
+                logger = logger.WriteTo.File(path: $"log\\log_{serviceName}_.txt", rollingInterval: fileRollingInterval, shared: true);
 
             if (withConsoleLog)
                 logger = logger.WriteTo.Console();
