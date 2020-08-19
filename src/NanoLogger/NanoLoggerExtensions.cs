@@ -3,12 +3,14 @@
     using Interfaces;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
+    using NanoLoggerLevelEnricher;
     using PropertyRetriever;
     using PropertyRetriever.Interfaces;
     using Serilog;
     using Serilog.Core;
     using Serilog.Events;
     using Serilog.Exceptions;
+    using Serilog.Sinks.SystemConsole.Themes;
     using Services;
 
     public static class NanoLoggerExtensions
@@ -37,15 +39,17 @@
             #region Options for file log
 
             var fileRollingInterval = RollingInterval.Hour;
+            var fileMessageTemplate = "";
 
             #endregion
 
             #region Options for console log
 
-
+            var consoleMessageTemplate = "";
 
             #endregion
 
+            // retrieving properties
             using (var scope = @this.BuildServiceProvider().GetService<IServiceScopeFactory>().CreateScope())
             {
                 var propertyRetriever = scope.ServiceProvider.GetService<IPropertyRetriever>();
@@ -71,6 +75,7 @@
 
                 if (withFileLog)
                 {
+                    fileMessageTemplate = propertyRetriever.RetrieveFromCommandLineOrEnvironment("fileMessageTemplate", "fileMessageTemplate", "{Timestamp} [{LogLevel}] (MachineName: {MachineName}) (Thread: {ThreadId}) {Message} {Exception}{NewLine}");
                     fileRollingInterval = propertyRetriever.RetrieveFromCommandLineOrEnvironment("fileRollingInterval", "fileRollingInterval", RollingInterval.Hour);
                     manager.SetFileLoggingLevel(propertyRetriever.RetrieveFromCommandLineOrEnvironment("fileMinimumLogEventLevel", "fileMinimumLogEventLevel", LogLevel.None));
                 }
@@ -81,6 +86,7 @@
 
                 if (withConsoleLog)
                 {
+                    consoleMessageTemplate = propertyRetriever.RetrieveFromCommandLineOrEnvironment("consoleMessageTemplate", "consoleMessageTemplate", "{Timestamp} [{LogLevel}] (MachineName: {MachineName}) (Thread: {ThreadId}) {Message} {Exception}{NewLine}").Replace("{LogLevel}", "{ColoredLogLevel}");
                     manager.SetConsoleLoggingLevel(propertyRetriever.RetrieveFromCommandLineOrEnvironment("consoleMinimumLogEventLevel", "consoleMinimumLogEventLevel", LogLevel.None));
                 }
 
@@ -92,30 +98,35 @@
                 .Enrich.WithMachineName()
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
+                .Enrich.WithLoggerLevel()
                 .MinimumLevel.Verbose();
 
             if (withSeqLog)
             {
                 logger = logger
-                    .WriteTo
-                    .Seq(seqAddress, apiKey: seqApiKey, controlLevelSwitch: seqControlLevelSwitch);
+                    .WriteTo.Seq(
+                        serverUrl: seqAddress, 
+                        apiKey: seqApiKey, 
+                        controlLevelSwitch: seqControlLevelSwitch);
             }
 
             if (withFileLog)
             {
                 logger = logger
-                    .WriteTo
-                    .File(path: $"log\\log_{serviceName}_.txt",
+                    .WriteTo.File(
+                        path: $"log\\log_{serviceName}_.txt",
                         levelSwitch: fileControlLevelSwitch,
                         rollingInterval: fileRollingInterval,
+                        outputTemplate: fileMessageTemplate,
                         shared: true);
             }
 
             if (withConsoleLog)
             {
                 logger = logger
-                    .WriteTo
-                    .Console(levelSwitch: consoleControlLevelSwitch);
+                    .WriteTo.Console(
+                        outputTemplate: consoleMessageTemplate,
+                        levelSwitch: consoleControlLevelSwitch);
             }
 
             @this.AddLogging(loggingBuilder =>

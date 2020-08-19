@@ -32,20 +32,8 @@
                 }
             });
 
-
             Console.ReadKey(true);
-            Console.WriteLine("Now critical at console and warning at file!");
-            loggerManager.SetConsoleLoggingLevel(LogLevel.Critical);
-            loggerManager.SetFileLoggingLevel(LogLevel.Warning);
-
-            Console.ReadKey(true);
-            Console.WriteLine("Now at information at console and nothing at file!");
-            loggerManager.SetConsoleLoggingLevel(LogLevel.Information);
-            loggerManager.SetFileLoggingLevel(LogLevel.None);
-
-            Console.ReadKey(true);
-            Console.WriteLine("Now at warning at console and trace at file!");
-            loggerManager.SetConsoleLoggingLevel(LogLevel.Warning);
+            loggerManager.SetConsoleLoggingLevel(LogLevel.Trace);
             loggerManager.SetFileLoggingLevel(LogLevel.Trace);
 
             Console.ReadKey(true);
