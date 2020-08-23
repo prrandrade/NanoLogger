@@ -1,9 +1,9 @@
-namespace NanoLogger.Test
+namespace NanoLogger.Test.Services
 {
     using Microsoft.Extensions.Logging;
+    using NanoLogger.Services;
     using Serilog.Core;
     using Serilog.Events;
-    using Services;
     using Xunit;
 
     public class NanoLoggerManagerTest
