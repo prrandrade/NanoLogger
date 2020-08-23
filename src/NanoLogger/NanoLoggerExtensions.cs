@@ -10,7 +10,6 @@
     using Serilog.Core;
     using Serilog.Events;
     using Serilog.Exceptions;
-    using Serilog.Sinks.SystemConsole.Themes;
     using Services;
 
     public static class NanoLoggerExtensions
