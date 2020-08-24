@@ -1,5 +1,6 @@
 namespace NanoLogger.Test.Services
 {
+    using System;
     using Microsoft.Extensions.Logging;
     using NanoLogger.Services;
     using Serilog.Core;
@@ -32,6 +33,25 @@ namespace NanoLogger.Test.Services
             Assert.Equal(logEventLevel, nanoLoggerManager.SeqLoggingLevelSwitch.MinimumLevel);
         }
 
+        [Fact]
+        public void SetSeqLoggingLevel_Error()
+        {
+            // arrange
+            var seqLevel = new LoggingLevelSwitch();
+            var fileLevel = new LoggingLevelSwitch();
+            var consoleLevel = new LoggingLevelSwitch();
+
+            var nanoLoggerManager = new NanoLoggerManager(seqLevel, fileLevel, consoleLevel);
+
+            // act
+            var result = Record.Exception(() => nanoLoggerManager.SetSeqLoggingLevel((LogLevel)8));
+
+            // assert
+            Assert.IsType<ArgumentOutOfRangeException>(result);
+            Assert.Equal((LogLevel)8, ((ArgumentOutOfRangeException)result).ActualValue);
+            Assert.Equal("logLevel", ((ArgumentOutOfRangeException)result).ParamName);
+        }
+
         [Theory]
         [InlineData(LogLevel.Trace, LogEventLevel.Verbose)]
         [InlineData(LogLevel.Debug, LogEventLevel.Debug)]
@@ -56,6 +76,25 @@ namespace NanoLogger.Test.Services
             Assert.Equal(logEventLevel, nanoLoggerManager.FileLoggingLevelSwitch.MinimumLevel);
         }
 
+        [Fact]
+        public void SetFileLoggingLevel_Error()
+        {
+            // arrange
+            var seqLevel = new LoggingLevelSwitch();
+            var fileLevel = new LoggingLevelSwitch();
+            var consoleLevel = new LoggingLevelSwitch();
+
+            var nanoLoggerManager = new NanoLoggerManager(seqLevel, fileLevel, consoleLevel);
+
+            // act
+            var result = Record.Exception(() => nanoLoggerManager.SetFileLoggingLevel((LogLevel)8));
+
+            // assert
+            Assert.IsType<ArgumentOutOfRangeException>(result);
+            Assert.Equal((LogLevel)8, ((ArgumentOutOfRangeException)result).ActualValue);
+            Assert.Equal("logLevel", ((ArgumentOutOfRangeException)result).ParamName);
+        }
+
         [Theory]
         [InlineData(LogLevel.Trace, LogEventLevel.Verbose)]
         [InlineData(LogLevel.Debug, LogEventLevel.Debug)]
@@ -78,6 +117,25 @@ namespace NanoLogger.Test.Services
 
             // assert
             Assert.Equal(logEventLevel, nanoLoggerManager.ConsoleLoggingLevelSwitch.MinimumLevel);
+        }
+
+        [Fact]
+        public void SetConsoleLoggingLevel_Error()
+        {
+            // arrange
+            var seqLevel = new LoggingLevelSwitch();
+            var fileLevel = new LoggingLevelSwitch();
+            var consoleLevel = new LoggingLevelSwitch();
+
+            var nanoLoggerManager = new NanoLoggerManager(seqLevel, fileLevel, consoleLevel);
+
+            // act
+            var result = Record.Exception(() => nanoLoggerManager.SetConsoleLoggingLevel((LogLevel)8));
+
+            // assert
+            Assert.IsType<ArgumentOutOfRangeException>(result);
+            Assert.Equal((LogLevel)8, ((ArgumentOutOfRangeException)result).ActualValue);
+            Assert.Equal("logLevel", ((ArgumentOutOfRangeException)result).ParamName);
         }
     }
 }

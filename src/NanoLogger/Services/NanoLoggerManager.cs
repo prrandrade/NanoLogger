@@ -36,17 +36,25 @@
 
         private static LogEventLevel ConvertLogLevel(LogLevel logLevel)
         {
-            return logLevel switch
+            switch (logLevel)
             {
-                LogLevel.Trace => LogEventLevel.Verbose,
-                LogLevel.Debug => LogEventLevel.Debug,
-                LogLevel.Information => LogEventLevel.Information,
-                LogLevel.Warning => LogEventLevel.Warning,
-                LogLevel.Error => LogEventLevel.Error,
-                LogLevel.Critical => LogEventLevel.Fatal,
-                LogLevel.None => (LogEventLevel) 1 + (int) LogEventLevel.Fatal,
-                _ => throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, null)
-            };
+                case LogLevel.Trace:
+                    return LogEventLevel.Verbose;
+                case LogLevel.Debug:
+                    return LogEventLevel.Debug;
+                case LogLevel.Information:
+                    return LogEventLevel.Information;
+                case LogLevel.Warning:
+                    return LogEventLevel.Warning;
+                case LogLevel.Error:
+                    return LogEventLevel.Error;
+                case LogLevel.Critical:
+                    return LogEventLevel.Fatal;
+                case LogLevel.None:
+                    return (LogEventLevel) 1 + (int) LogEventLevel.Fatal;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, null);
+            }
         }
     }
 }

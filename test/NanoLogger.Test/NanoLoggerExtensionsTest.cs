@@ -62,9 +62,7 @@
             Mock.Get(propertyRetriever).Setup(x => x.RetrieveFromCommandLineOrEnvironment("seqMinimumLogEventLevel", "seqMinimumLogEventLevel", LogLevel.None)).Returns(logLevel);
 
             var seqControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
-            var fileControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
-            var consoleControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
-            var manager = new NanoLoggerManager(seqControlLevelSwitch, fileControlLevelSwitch, consoleControlLevelSwitch);
+            var manager = new NanoLoggerManager(seqControlLevelSwitch, null, null);
 
             // act
             var logger = NanoLoggerExtensions.GetLoggerConfiguration(manager, propertyRetriever);
@@ -96,15 +94,62 @@
         public void GetLoggerConfigurationTest_FileOutput()
         {
             // arrange
-            
+            const LogLevel logLevel = LogLevel.Information;
+
+            var propertyRetriever = Mock.Of<IPropertyRetriever>();
+            Mock.Get(propertyRetriever).Setup(x => x.CheckFromCommandLine("withFileLog")).Returns(true);
+            Mock.Get(propertyRetriever).Setup(x => x.RetrieveFromCommandLineOrEnvironment("fileMinimumLogEventLevel", "fileMinimumLogEventLevel", LogLevel.None)).Returns(logLevel);
+            Mock.Get(propertyRetriever).Setup(x => x.RetrieveFromCommandLineOrEnvironment("fileMessageTemplate", "fileMessageTemplate", It.IsAny<string>())).Returns((string s1, string s2, string s3) => s3);
+
+            var fileControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
+            var manager = new NanoLoggerManager(null, fileControlLevelSwitch, null);
+
             // act
+            var logger = NanoLoggerExtensions.GetLoggerConfiguration(manager, propertyRetriever);
 
             // assert
+            var sinksField = typeof(LoggerConfiguration).GetField("_logEventSinks", BindingFlags.NonPublic | BindingFlags.Instance);
+            var sinksValue = (List<ILogEventSink>) sinksField.GetValue(logger);
+            var sinkFile = sinksValue[0];
+            var sinkFileAssembly = Assembly.Load("Serilog");
+            var sinkFileType = sinkFileAssembly.GetType("Serilog.Core.Sinks.RestrictedSink");
+            
+            var fileControlledSwitchField = sinkFileType.GetField("_levelSwitch", BindingFlags.NonPublic | BindingFlags.Instance);
+            var fileControlledSwitchValue = fileControlledSwitchField.GetValue(sinkFile);
+            Assert.Equal(manager.FileLoggingLevelSwitch, (LoggingLevelSwitch)fileControlledSwitchValue);
         }
 
+        [Fact]
+        public void GetLoggerConfigurationTest_ConsoleOutput()
+        {
+            // arrange
+            const LogLevel logLevel = LogLevel.Warning;
+
+            var propertyRetriever = Mock.Of<IPropertyRetriever>();
+            Mock.Get(propertyRetriever).Setup(x => x.CheckFromCommandLine("withConsoleLog")).Returns(true);
+            Mock.Get(propertyRetriever).Setup(x => x.RetrieveFromCommandLineOrEnvironment("consoleMinimumLogEventLevel", "consoleMinimumLogEventLevel", LogLevel.None)).Returns(logLevel);
+            Mock.Get(propertyRetriever).Setup(x => x.RetrieveFromCommandLineOrEnvironment("consoleMessageTemplate", "consoleMessageTemplate", It.IsAny<string>())).Returns((string s1, string s2, string s3) => s3);
+
+            var consoleControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
+            var manager = new NanoLoggerManager(null, null, consoleControlLevelSwitch);
+
+            // act
+            var logger = NanoLoggerExtensions.GetLoggerConfiguration(manager, propertyRetriever);
+
+            // assert
+            var sinksField = typeof(LoggerConfiguration).GetField("_logEventSinks", BindingFlags.NonPublic | BindingFlags.Instance);
+            var sinksValue = (List<ILogEventSink>) sinksField.GetValue(logger);
+            var sinkConsole = sinksValue[0];
+            var sinkConsoleAssembly = Assembly.Load("Serilog");
+            var sinkConsoleType = sinkConsoleAssembly.GetType("Serilog.Core.Sinks.RestrictedSink");
+            
+            var consoleControlledSwitchField = sinkConsoleType.GetField("_levelSwitch", BindingFlags.NonPublic | BindingFlags.Instance);
+            var consoleControlledSwitchValue = consoleControlledSwitchField.GetValue(sinkConsole);
+            Assert.Equal(manager.ConsoleLoggingLevelSwitch, (LoggingLevelSwitch)consoleControlledSwitchValue);
+        }
 
         [Fact]
-        public void AddNanoLogger_NoOutput()
+        public void AddNanoLogger()
         {
             // arrange
             var services = new ServiceCollection();
