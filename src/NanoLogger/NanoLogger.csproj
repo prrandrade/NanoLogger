@@ -2,6 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>NanoLogger</PackageId>
+    <PackageDescription>Abstractions to install a serilog log system with different configurable outputs</PackageDescription>
+    <Authors><![CDATA[Paulo Roberto Ramos de Andrade]]></Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/prrandrade/NanoLogger</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>serilog,log,logger,ilogger,dependency,injection,command,line,environment,abstraction</PackageTags>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
