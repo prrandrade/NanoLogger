@@ -35,12 +35,13 @@
             var enrichersField = typeof(LoggerConfiguration).GetField("_enrichers", BindingFlags.NonPublic | BindingFlags.Instance);
             var enrichersValue = (List<ILogEventEnricher>)enrichersField.GetValue(logger);
 
-            Assert.Equal(5, enrichersValue.Count);
+            Assert.Equal(6, enrichersValue.Count);
             Assert.IsType<ExceptionEnricher>(enrichersValue[0]);
             Assert.IsType<MachineNameEnricher>(enrichersValue[1]);
-            Assert.IsType<ProcessIdEnricher>(enrichersValue[2]);
-            Assert.IsType<ThreadIdEnricher>(enrichersValue[3]);
-            Assert.IsType<NanoLoggerLevelEnricher>(enrichersValue[4]);
+            Assert.IsType<EnvironmentUserNameEnricher>(enrichersValue[2]);
+            Assert.IsType<ProcessIdEnricher>(enrichersValue[3]);
+            Assert.IsType<ThreadIdEnricher>(enrichersValue[4]);
+            Assert.IsType<NanoLoggerLevelEnricher>(enrichersValue[5]);
 
             var minimumLevelField = typeof(LoggerConfiguration).GetField("_minimumLevel", BindingFlags.NonPublic | BindingFlags.Instance);
             var minimumLevelValue = (LogEventLevel)minimumLevelField.GetValue(logger);
