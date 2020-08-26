@@ -102,6 +102,7 @@
             var logger = new LoggerConfiguration()
                 .Enrich.WithExceptionDetails()
                 .Enrich.WithMachineName()
+                .Enrich.WithEnvironmentUserName()
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
                 .Enrich.WithLoggerLevel()

@@ -2,7 +2,7 @@
   "profiles": {
     "NanoLogger.Sandbox": {
       "commandName": "Project",
-      "commandLineArgs": "--withConsoleLog --withFileLog --withSeqLog --seqLogAddress http://localhost:5341"
+      "commandLineArgs": "--withConsoleLog --withFileLog --withSeqLog --seqLogAddress http://localhost:5341 --consoleMinimumLogEventLevel Warning"
     }
   }
 }
