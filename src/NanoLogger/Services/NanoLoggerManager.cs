@@ -8,9 +8,9 @@
 
     public class NanoLoggerManager : INanoLoggerManager
     {
-        public LoggingLevelSwitch SeqLoggingLevelSwitch { get; }
-        public LoggingLevelSwitch FileLoggingLevelSwitch { get; }
-        public LoggingLevelSwitch ConsoleLoggingLevelSwitch { get; }
+        public LoggingLevelSwitch SeqLoggingLevelSwitch { get; init; }
+        public LoggingLevelSwitch FileLoggingLevelSwitch { get; init; }
+        public LoggingLevelSwitch ConsoleLoggingLevelSwitch { get; init; }
 
         public NanoLoggerManager(LoggingLevelSwitch seqLoggingLevelSwitch, LoggingLevelSwitch fileLoggingLevelSwitch, LoggingLevelSwitch consoleLoggingLevelSwitch)
         {

@@ -6,8 +6,8 @@
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
     using Moq;
+    using NanoLogger.Enrichers;
     using NanoLogger.Services;
-    using NanoLoggerLevelEnricher;
     using PropertyRetriever.Interfaces;
     using Serilog;
     using Serilog.Core;
@@ -150,13 +150,38 @@
         }
 
         [Fact]
-        public void AddNanoLogger()
+        public void GetLoggerConfigurationTest_DefaultConsoleOutput()
+        {
+            // arrange
+            var propertyRetriever = Mock.Of<IPropertyRetriever>();
+            var consoleControlLevelSwitch = new LoggingLevelSwitch();
+            var manager = new NanoLoggerManager(null, null, consoleControlLevelSwitch);
+
+            // act
+            var logger = NanoLoggerExtensions.GetLoggerConfiguration(manager, propertyRetriever, true);
+
+            // assert
+            var sinksField = typeof(LoggerConfiguration).GetField("_logEventSinks", BindingFlags.NonPublic | BindingFlags.Instance);
+            var sinksValue = (List<ILogEventSink>) sinksField.GetValue(logger);
+            var sinkConsole = sinksValue[0];
+            var sinkConsoleAssembly = Assembly.Load("Serilog");
+            var sinkConsoleType = sinkConsoleAssembly.GetType("Serilog.Core.Sinks.RestrictedSink");
+            
+            var consoleControlledSwitchField = sinkConsoleType.GetField("_levelSwitch", BindingFlags.NonPublic | BindingFlags.Instance);
+            var consoleControlledSwitchValue = consoleControlledSwitchField.GetValue(sinkConsole);
+            Assert.Equal(manager.ConsoleLoggingLevelSwitch.MinimumLevel, ((LoggingLevelSwitch)consoleControlledSwitchValue).MinimumLevel);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void AddNanoLogger(bool withDefaultConsoleLog)
         {
             // arrange
             var services = new ServiceCollection();
 
             // act
-            services.AddNanoLogger();
+            services.AddNanoLogger(withDefaultConsoleLog);
             var container = services.BuildServiceProvider();
 
             // assert

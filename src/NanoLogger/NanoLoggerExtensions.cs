@@ -1,9 +1,9 @@
 ﻿namespace NanoLogger
 {
+    using Enrichers;
     using Interfaces;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Logging;
-    using NanoLoggerLevelEnricher;
     using PropertyRetriever;
     using PropertyRetriever.Interfaces;
     using Serilog;
@@ -14,11 +14,11 @@
 
     public static class NanoLoggerExtensions
     {
-        public static IServiceCollection AddNanoLogger(this IServiceCollection @this)
+        public static IServiceCollection AddNanoLogger(this IServiceCollection @this, bool withDefaultConsoleLog = false)
         {
             @this.AddPropertyRetriever();
 
-            var seqControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
+            var seqControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Warning);
             var fileControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
             var consoleControlLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
 
@@ -28,7 +28,7 @@
 
             using (var scope = @this.BuildServiceProvider().GetService<IServiceScopeFactory>().CreateScope())
             {
-                logger = GetLoggerConfiguration(manager, scope.ServiceProvider.GetService<IPropertyRetriever>());
+                logger = GetLoggerConfiguration(manager, scope.ServiceProvider.GetService<IPropertyRetriever>(), withDefaultConsoleLog);
             }
 
             @this.AddLogging(loggingBuilder =>
@@ -40,65 +40,80 @@
             return @this;
         }
 
-        public static LoggerConfiguration GetLoggerConfiguration(NanoLoggerManager manager, IPropertyRetriever propertyRetriever)
+        public static LoggerConfiguration WithSeqLog(this LoggerConfiguration logger, NanoLoggerManager manager, IPropertyRetriever propertyRetriever)
         {
-            #region Options for seq log
-
-            string seqAddress = null;
-            string seqApiKey = null;
-
-            #endregion
-
-            #region Options for file log
-
-            var fileRollingInterval = RollingInterval.Hour;
-            var fileMessageTemplate = "";
-
-            #endregion
-
-            #region Options for console log
-
-            var consoleMessageTemplate = "";
-
-            #endregion
-
-            var serviceName = propertyRetriever.RetrieveServiceName();
             var withSeqLog = propertyRetriever.CheckFromCommandLine("withSeqLog");
-            var withConsoleLog = propertyRetriever.CheckFromCommandLine("withConsoleLog");
-            var withFileLog = propertyRetriever.CheckFromCommandLine("withFileLog");
-
-            #region Retrieving options for seq log
 
             if (withSeqLog)
             {
-                seqAddress = propertyRetriever.RetrieveFromCommandLineOrEnvironment("seqLogAddress", "seqLogAddress", null);
-                seqApiKey = propertyRetriever.RetrieveFromCommandLineOrEnvironment("seqApiKey", "seqApiKey", null);
+                var seqAddress = propertyRetriever.RetrieveFromCommandLineOrEnvironment("seqLogAddress", "seqLogAddress", null);
+                var seqApiKey = propertyRetriever.RetrieveFromCommandLineOrEnvironment("seqApiKey", "seqApiKey", null);
                 manager.SetSeqLoggingLevel(propertyRetriever.RetrieveFromCommandLineOrEnvironment("seqMinimumLogEventLevel", "seqMinimumLogEventLevel", LogLevel.None));
+
+                logger = logger
+                    .WriteTo.Seq(
+                        serverUrl: seqAddress,
+                        apiKey: seqApiKey,
+                        controlLevelSwitch: manager.SeqLoggingLevelSwitch);
             }
 
-            #endregion
+            return logger;
+        }
 
-            #region Retrieving options for file log
+        public static LoggerConfiguration WithFileLog(this LoggerConfiguration logger, NanoLoggerManager manager, IPropertyRetriever propertyRetriever)
+        {
+            var withFileLog = propertyRetriever.CheckFromCommandLine("withFileLog");
 
             if (withFileLog)
             {
-                fileMessageTemplate = propertyRetriever.RetrieveFromCommandLineOrEnvironment("fileMessageTemplate", "fileMessageTemplate", "{Timestamp} [{LogLevel}] (MachineName: {MachineName}) (Thread: {ThreadId}) {Message} {Exception}{NewLine}");
-                fileRollingInterval = propertyRetriever.RetrieveFromCommandLineOrEnvironment("fileRollingInterval", "fileRollingInterval", RollingInterval.Hour);
+                var fileMessageTemplate = propertyRetriever.RetrieveFromCommandLineOrEnvironment("fileMessageTemplate", "fileMessageTemplate", "{Timestamp} [{LogLevel}] (MachineName: {MachineName}) (Thread: {ThreadId}) {Message} {Exception}{NewLine}");
+                var fileRollingInterval = propertyRetriever.RetrieveFromCommandLineOrEnvironment("fileRollingInterval", "fileRollingInterval", RollingInterval.Hour);
                 manager.SetFileLoggingLevel(propertyRetriever.RetrieveFromCommandLineOrEnvironment("fileMinimumLogEventLevel", "fileMinimumLogEventLevel", LogLevel.None));
+
+                logger = logger
+                    .WriteTo.File(
+                        path: $"log\\log_{propertyRetriever.RetrieveServiceName()}_.txt",
+                        levelSwitch: manager.FileLoggingLevelSwitch,
+                        rollingInterval: fileRollingInterval,
+                        outputTemplate: fileMessageTemplate,
+                        shared: true);
             }
 
-            #endregion
+            return logger;
+        }
 
-            #region Retrieving options for console log
-
-            if (withConsoleLog)
+        public static LoggerConfiguration WithConsoleLog(this LoggerConfiguration logger, NanoLoggerManager manager, IPropertyRetriever propertyRetriever, bool withDefaultConsoleLog = false)
+        {
+            if (withDefaultConsoleLog)
             {
-                consoleMessageTemplate = propertyRetriever.RetrieveFromCommandLineOrEnvironment("consoleMessageTemplate", "consoleMessageTemplate", "{Timestamp} [{LogLevel}] (MachineName: {MachineName}) (Thread: {ThreadId}) {Message} {Exception}{NewLine}").Replace("{LogLevel}", "{ColoredLogLevel}");
-                manager.SetConsoleLoggingLevel(propertyRetriever.RetrieveFromCommandLineOrEnvironment("consoleMinimumLogEventLevel", "consoleMinimumLogEventLevel", LogLevel.None));
+                logger = logger
+                    .WriteTo.Console(
+                        outputTemplate: "{Timestamp} [{ColoredLogLevel}] (MachineName: {MachineName}) (Thread: {ThreadId}) {Message} {Exception}{NewLine}",
+                        levelSwitch: new LoggingLevelSwitch());
+            }
+            else
+            {
+                var withConsoleLog = propertyRetriever.CheckFromCommandLine("withConsoleLog");
+
+                if (withConsoleLog)
+                {
+                    var consoleMessageTemplate = propertyRetriever.RetrieveFromCommandLineOrEnvironment("consoleMessageTemplate", "consoleMessageTemplate", "{Timestamp} [{LogLevel}] (MachineName: {MachineName}) (Thread: {ThreadId}) {Message} {Exception}{NewLine}").Replace("{LogLevel}", "{ColoredLogLevel}");
+                    manager.SetConsoleLoggingLevel(propertyRetriever.RetrieveFromCommandLineOrEnvironment("consoleMinimumLogEventLevel", "consoleMinimumLogEventLevel", LogLevel.None));
+                    logger = logger
+                        .WriteTo.Console(
+                            outputTemplate: consoleMessageTemplate,
+                            levelSwitch: manager.ConsoleLoggingLevelSwitch);
+                }
             }
 
-            #endregion
+            return logger;
+        }
 
+        public static LoggerConfiguration GetLoggerConfiguration(
+            NanoLoggerManager manager,
+            IPropertyRetriever propertyRetriever,
+            bool withDefaultConsoleLog = false)
+        {
             var logger = new LoggerConfiguration()
                 .Enrich.WithExceptionDetails()
                 .Enrich.WithMachineName()
@@ -108,33 +123,10 @@
                 .Enrich.WithLoggerLevel()
                 .MinimumLevel.Verbose();
 
-            if (withSeqLog) 
-            {
-                logger = logger
-                    .WriteTo.Seq(
-                        serverUrl: seqAddress, 
-                        apiKey: seqApiKey, 
-                        controlLevelSwitch: manager.SeqLoggingLevelSwitch);
-            }
-
-            if (withFileLog)
-            {
-                logger = logger
-                    .WriteTo.File(
-                        path: $"log\\log_{serviceName}_.txt",
-                        levelSwitch: manager.FileLoggingLevelSwitch,
-                        rollingInterval: fileRollingInterval,
-                        outputTemplate: fileMessageTemplate,
-                        shared: true);
-            }
-
-            if (withConsoleLog)
-            {
-                logger = logger
-                    .WriteTo.Console(
-                        outputTemplate: consoleMessageTemplate,
-                        levelSwitch: manager.ConsoleLoggingLevelSwitch);
-            }
+            logger = logger
+                .WithSeqLog(manager, propertyRetriever)
+                .WithFileLog(manager, propertyRetriever)
+                .WithConsoleLog(manager, propertyRetriever, withDefaultConsoleLog);
 
             return logger;
         }
